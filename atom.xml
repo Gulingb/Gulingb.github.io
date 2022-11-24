@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
-  <title>Hexo</title>
+  <title>lsw</title>
   
   
   <link href="http://example.com/atom.xml" rel="self"/>
   
   <link href="http://example.com/"/>
-  <updated>2022-11-24T07:20:21.366Z</updated>
+  <updated>2022-11-24T08:33:00.947Z</updated>
   <id>http://example.com/</id>
   
   <author>
@@ -15,6 +15,27 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>组件通信的三种方式</title>
+    <link href="http://example.com/2022/11/24/%E7%BB%84%E4%BB%B6%E9%80%9A%E4%BF%A1%E7%9A%84%E4%B8%89%E7%A7%8D%E6%96%B9%E5%BC%8F/"/>
+    <id>http://example.com/2022/11/24/%E7%BB%84%E4%BB%B6%E9%80%9A%E4%BF%A1%E7%9A%84%E4%B8%89%E7%A7%8D%E6%96%B9%E5%BC%8F/</id>
+    <published>2022-11-24T08:30:51.171Z</published>
+    <updated>2022-11-24T08:33:00.947Z</updated>
+    
+    <content type="html"><![CDATA[<p>​<br>1.props<br>首先适用于父传子</p><p>//父组件<br><template><br>    <div><br>        <Student :students="studentList"/><br>    </div><br></template></p><script>    // 引入School组件    import Student from './components/Student'    export default {        name:'App',        components:{Student},        data(){            return{                studentList: ['卿卿', '四喜', '快快']            }        },      }</script><template>    <div>        <span v-for="(item, index) in students" :key="index"></span>    </div></template><script>export default{    name:'Student',    props: ['students']}</script><p> 也适用于子传父（首先要求父组件给子组件传一个函数用来接收回调）<br>//父组件<br><template><br>    <div><br>        <!--通过父组件传给子组件传递函数类型的props实现：子给父传递数据--><br>        //&lt;Student  : 子组件发送数据时调用的方法名=” 父组件接收数据的方法名 “&gt;</Student><br>        <Student :getStudentName="getStudentName"/><br>    </div><br></template></p><script>    // 引入School组件    import Student from './components/Student'    export default {        name:'App',        components:{Student},        methods:{            getStudentName(name){                //从子组件接收到传递过来的参数                console.log('School接收到了学生名',name)            }        }    }</script><p>//子组件<br><template><br>    <div><br>        &lt;button @click=”sendStudentName”&gt;把学生名给School</button><br>    </div><br></template></p><script>export default{    name:'Student',    data(){        return{            name:'卿卿'        }    },    props: ['getStudentName'],    methods:{           //发送学生名给父组件        sendStudentName(){            //调用从父组件中props过来的getSchoolName方法，将学校名称通过参数形式传过去            this.getStudentName(this.name)        }    }}</script><p> 2.组件的自定义事件</p><template>    <div class="app">        <h1></h1><pre><code>    &lt;!-- 通过父组件给子组件绑定一个自定义事件实现：子给父传递数据（第一种写法，使用@或者v-on） --&gt;    &lt;Student v-on:atguigu=&quot;getStudentName&quot; @demo=&#39;m1&#39;/&gt;    &lt;!-- 通过父组件给子组件绑定一个自定义事件实现：子给父传递数据(第二种写法，使用ref) --&gt;    &lt;!-- &lt;Student ref=&quot;student&quot;/&gt; --&gt;&lt;/div&gt;</code></pre></template><script>    // 引入School组件    import Student from './components/Student'    export default {        name:'App',        components:{Student},        data(){            return{                msg:'欢迎学习'            }        },        methods:{            getStudentName(name){                console.log('App收到了学生名',name)            },            m1(){                console.log('demo事件被触发了')            }        },        mounted(){            // this.$refs.student.$on('atguigu',this.getStudentName)            // this.$refs.student.$once('atguigu',this.getStudentName)        }    }</script><style scoped>    .app{        background-color: aliceblue;        padding: 5px;    }</style><p>//子组件<br><template><br>    <div class="school"><br>        <h2>学生姓名：</h2><br>        <h2>学生性别：</h2><br>        &lt;button @click=”sendStudentName”&gt;把学生名给App</button><br>        &lt;button @click=”unbind”&gt;解绑atguigu事件</button><br>        &lt;button @click=”death”&gt;销毁当前Student组件实例</button><br>    </div><br></template></p><script>export default{    name:'Student',    data(){        return{            name:'四喜',            sex:'女'        }    },    methods:{        sendStudentName(){            //触发Student组件实例身上的atguigu事件            this.$emit('atguigu',this.name)            this.$emit('demo')        },        unbind(){            // this.$off('atguigu') //解绑一个自定义事件            // this.$off(['atguigu','demo']) //解绑多个个自定义事件            this.$off() //解绑所有自定义事件        },        death(){            this.$destroy()//销毁当前Student组件实例，销毁后student实例的自定义事件全都不奏效        }    }}</script><style scoped>.school{        background-color: pink;    }</style><p>3.全局事件总线</p><p>接收数据：A组件想接受数据，则在A组件中给$bus绑定自定义事件，时间回调在A组件<br>提供数据：this.$bus.$emit(‘xxx’,data)</p><p> 安装全局事件总线（main.js中）</p><p>// 引入vue<br>import Vue from ‘vue’<br>// 引入App<br>import App from ‘./App.vue’<br>// 关闭vue的生产提示<br>Vue.config.productionTip = false</p><p>// 创建vm<br>new Vue({<br>    el:’#app’,<br>    render: h =&gt; h(App),<br>    beforeCreate(){<br>        Vue.prototype.$bus = this //安装全局事件总线<br>    }<br>})</p><p>Student：发出事件</p><template>  <div class="student">    <h2>学生姓名：</h2>    <h2>学生性别：</h2>    <button @click="sendStudentName">把学生名给School组件</button>  </div></template><script>export default {  name: "Student",  data() {    return {      name: "张三",      sex: "男",    };  },  methods: {    sendStudentName() {      this.$bus.$emit("hello", this.name);    },  },};</script><style scoped>.student {  background-color: pink;  padding: 5px;  margin-top: 30px;}</style><p>School：接收事件</p><template>  <div class="school">    <h2>学校名称：</h2>    <h2>学校地址：</h2>  </div></template><script>export default {  name: "School",  data() {    return {      name: "尚硅谷",      address: "北京",    };  },  mounted() {    // console.log('School',this)    this.$bus.$on("hello", (data) => {      console.log("我是School组件，收到了数据", data);    });  },  beforeDestroy() {    this.$bus.$off("hello");  },};</script><style scoped>.school {  background-color: skyblue;  padding: 5px;}</style><p>​</p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;p&gt;​&lt;br&gt;1.props&lt;br&gt;首先适用于父传子&lt;/p&gt;
+&lt;p&gt;//父组件&lt;br&gt;&lt;template&gt;&lt;br&gt;    &lt;div&gt;&lt;br&gt;        &lt;Student :students=&quot;studentList&quot;/&gt;&lt;br&gt;    &lt;/div&gt;&lt;br&gt;&lt;/templat</summary>
+      
+    
+    
+    
+    
+  </entry>
   
   <entry>
     <title>title</title>
